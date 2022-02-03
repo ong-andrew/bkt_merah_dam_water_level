@@ -1,3 +1,5 @@
+#Credit to Nigel Aw for guidance.
+
 import re
 import requests
 from bs4 import BeautifulSoup
@@ -9,15 +11,22 @@ today = date.today()
 url = "http://infokemarau.water.gov.my/drought_monitor.cfm"
 headers = {'user-agent': 'my-agent/1.0.1'}
 
-soup = BeautifulSoup(requests.get(url, headers=headers).text)
+site = requests.get(url, headers=headers).text
+soup = BeautifulSoup(site,'lxml')
+table = soup.findAll('table', id="dis_tbl")[0]
+rows = table.findAll('tr')
 
-tables = soup.find(text=re.compile('5006401')) #find the station name
-stationNo = tables.text
-balanceStorage = tables.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.text
-lastUpdate = tables.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.next.text
-today = date.today()
+data_list = []
 
-def scraper(): #creates a temp.csv file to store current data
+for row in rows:
+    if "Empangan Bukit Merah" in row.text:
+        for column in row.findAll('td'):
+            data_list.append(column.text.strip())
+
+balanceStorage = data_list[10]
+lastUpdated = data_list[11]
+
+def scraper():
     with open('bukitMerah.csv', 'a', newline='') as temp:
         writer = csv.writer(temp, delimiter=',')
-        writer.writerow([today,balanceStorage.strip(),stationNo.strip(),lastUpdate.strip()])
+        writer.writerow([today,balanceStorage,lastUpdated])
